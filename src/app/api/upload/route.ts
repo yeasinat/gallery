@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
         .end(bytes);
     });
 
-    console.log(result)
+    console.log(result);
 
     await connectToDB();
 
@@ -93,4 +93,36 @@ export async function GET() {
   }
 }
 
+export async function DELETE(req: NextRequest) {
+  try {
+    const { publicId } = await req.json();
 
+    if (!publicId) {
+      return NextResponse.json(
+        { error: "No public ID provided" },
+        { status: 400 }
+      );
+    }
+
+    await connectToDB();
+
+    const image = await Image.findOneAndDelete({ publicId });
+
+    if (!image) {
+      return NextResponse.json({ error: "Image not found" }, { status: 404 });
+    }
+
+    await cloudinary.uploader.destroy(publicId);
+
+    return NextResponse.json({
+      message: "success",
+      image,
+    });
+  } catch (error) {
+    console.error("Error deleting image:", error);
+    return NextResponse.json(
+      { error: "Failed to delete image" },
+      { status: 500 }
+    );
+  }
+}
